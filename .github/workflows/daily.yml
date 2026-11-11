@@ -1,9 +1,8 @@
 name: Trae AutoCheckin Daily
 
 on:
-  # 定时签到留给 fork 后自行开启（取消下面两行注释即可）
-  # schedule:
-  #   - cron: '23 16 * * *'  # 北京时间 00:23
+  schedule:
+    - cron: '0 0 * * *'  # 北京时间每天 08:00（UTC 0 点）
   workflow_dispatch:
 
 concurrency:
@@ -11,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write   # heartbeat 需要写权限（原版为 read）
 
 jobs:
   checkin:
@@ -105,3 +104,19 @@ jobs:
         with:
           path: .trae-cache/state.enc
           key: trae-state-v1-${{ github.run_id }}
+
+      # ── 新增：仓库活跃心跳 ──────────────────────────────
+      # GitHub 规则：仓库 60 天无活动会自动停掉定时 workflow。
+      # 原版状态只写 Actions Cache（不产生 commit），断档没人知道。
+      # 每天提交一个无敏感内容的时间戳文件，让仓库保持活跃。
+      - name: Heartbeat
+        if: ${{ always() }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .heartbeat
+          git add .heartbeat
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: heartbeat"
+            git push
+          fi
