@@ -2,7 +2,7 @@ name: Trae AutoCheckin Daily
 
 on:
   schedule:
-    - cron: '0 20 * * *'  # 北京时间每天 04:00（UTC 20:00）
+    - cron: '17 20 * * *'  # 北京时间每天 04:17（UTC 20:17）
   workflow_dispatch:
 
 concurrency:
